@@ -146,10 +146,8 @@ class Build:
         # Each step is either a string path or a dict
         steps: list[Step] = []
         for s in steps_data:
-            if isinstance(s, str):
+            if isinstance(s, (str, Mapping)):
                 steps.append(Step.from_dict(s))
-            elif isinstance(s, Mapping):
-                steps.append(Step.from_dict(s))  # ty: ignore[invalid-argument-type]
             else:
                 raise ValueError(f"Step must be a string or dict, got {type(s)}")
 
