@@ -22,19 +22,19 @@ dependencies = [
     "pyyaml==6.0.3",
     "rich==15.0.0",
     "humanize==4.16.0",
-    "pydantic-settings==2.14.2",
+    "pydantic-settings==2.15.0",
 ]
 
 [project.optional-dependencies]
-s3 = ["boto3==1.43.63"]
+s3 = ["boto3==1.43.72"]
 
 [dependency-groups]
 dev = [
     "pytest==9.1.1",
     "pytest-mock==3.15.1",
-    "ruff==0.16.1",
-    "ty==0.0.66",
-    "prek==0.4.12"
+    "ruff==0.16.3",
+    "ty==0.0.72",
+    "prek==0.4.13"
 ]
 
 [project.scripts]
@@ -48,7 +48,7 @@ Changelog = "https://github.com/AI-Safety-Institute/sifter/blob/main/CHANGELOG.m
 Security = "https://github.com/AI-Safety-Institute/sifter/blob/main/SECURITY.md"
 
 [build-system]
-requires = ["uv_build==0.12.1"]
+requires = ["uv_build==0.12.5"]
 build-backend = "uv_build"
 
 [tool.uv.build-backend]
