@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- OCI/ECR pushes of manifest-built images now attach a Cosign-signed SLSA v1
+  provenance attestation. Cosign binds the attestation to the subject image digest;
+  the predicate records the Sifter content hash, definition-file digests, dependency
+  identity and source revision while
+  deliberately excluding build-argument values.
+
 ### Changed
 
 - Added public package metadata and aligned the release and security-reporting

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from sifter import signing
@@ -29,6 +31,16 @@ def test_verify_command_without_a_real_key_refuses(key: str | None) -> None:
 def test_sign_command_emits_the_cosign_sign_invocation() -> None:
     cmd = signing.sign_command("reg/x/app:1", "awskms:///alias/k")
     assert "cosign sign --key awskms:///alias/k --yes reg/x/app:1" in cmd
+
+
+def test_attest_command_emits_slsa_predicate() -> None:
+    cmd = signing.attest_command(
+        "reg/x/app:1", Path("/scratch/provenance.json"), "awskms:///alias/k"
+    )
+    assert "cosign attest" in cmd
+    assert "--predicate /scratch/provenance.json" in cmd
+    assert "--type https://slsa.dev/provenance/v1" in cmd
+    assert "--key awskms:///alias/k --yes reg/x/app:1" in cmd
 
 
 def test_verify_command_emits_the_cosign_verify_invocation() -> None:

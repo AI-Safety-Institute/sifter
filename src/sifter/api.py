@@ -36,6 +36,7 @@ from sifter.models import (
     parse_filename,
 )
 from sifter.oci import OCIRegistry
+from sifter.provenance import write_predicate
 from sifter.registry import RemoteRegistry
 from sifter.slurm import SLURMClient, SLURMError, SLURMJob
 from sifter.storage import Storage, StorageError
@@ -441,6 +442,28 @@ def remove_containers(name: str | None = None) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
+def _provenance_for_push(
+    *, config: SifterConfig, storage: Storage, filename: str, manifest: Manifest | None = None
+) -> Path | None:
+    """Create provenance for a manifest-built image, or return None for ad-hoc images."""
+    try:
+        loaded = manifest or Manifest.load(config.manifest_path)
+    except (FileNotFoundError, OSError, ValueError):
+        return None
+    build = next(
+        (item for item in loaded.builds.values() if item.output_filename == filename), None
+    )
+    if build is None:
+        return None
+    return write_predicate(
+        image=storage.local_path(filename),
+        build=build,
+        manifest=loaded,
+        repo_dir=config.repo_dir,
+        output_dir=config.staging_dir / "provenance",
+    )
+
+
 def push_container(filename: str, force: bool = False) -> str:
     """Push a single container to the remote registry.
 
@@ -477,7 +500,11 @@ def push_container(filename: str, force: bool = False) -> str:
     if remote.exists(filename) and not force:
         raise FileExistsError(f"Already exists in remote registry: {remote.uri(filename)}")
 
-    cmd = remote.generate_push_command(storage.local_path(filename), filename)
+    provenance = _provenance_for_push(config=config, storage=storage, filename=filename)
+    if isinstance(remote, OCIRegistry):
+        cmd = remote.generate_push_command(storage.local_path(filename), filename, provenance)
+    else:
+        cmd = remote.generate_push_command(storage.local_path(filename), filename)
     return slurm.submit_transfer_job(command=cmd, filename=filename, is_pull=False)
 
 
@@ -527,7 +554,13 @@ def push_release(
             continue
 
         try:
-            cmd = remote.generate_push_command(storage.local_path(fn), fn)
+            provenance = _provenance_for_push(
+                config=config, storage=storage, filename=fn, manifest=manifest
+            )
+            if isinstance(remote, OCIRegistry):
+                cmd = remote.generate_push_command(storage.local_path(fn), fn, provenance)
+            else:
+                cmd = remote.generate_push_command(storage.local_path(fn), fn)
             job_id = slurm.submit_transfer_job(command=cmd, filename=fn, is_pull=False)
             results.append(TransferResult(filename=fn, job_id=job_id, skipped=False))
         except SLURMError:

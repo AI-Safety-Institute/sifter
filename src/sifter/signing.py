@@ -14,6 +14,7 @@ import re
 import shlex
 import shutil
 import subprocess
+from pathlib import Path
 
 from sifter.storage import StorageError
 
@@ -42,6 +43,20 @@ def sign_command(ref: str, signing_key: str | None) -> str:
             "or SIFTER_SIGN=0 to push unsigned — dev/airgapped only)"
         )
     return f"{_COSIGN_V3_FLOOR} && cosign sign --key {shlex.quote(signing_key)} --yes {shlex.quote(ref)}"
+
+
+def attest_command(ref: str, predicate_path: Path, signing_key: str | None) -> str:
+    """Shell to attach a signed SLSA provenance attestation to ``ref``."""
+    if not signing_key or not signing_key.strip():
+        raise SigningError(
+            "cannot attest provenance: no signing key configured (set SIFTER_SIGNING_KEY)"
+        )
+    return (
+        f"{_COSIGN_V3_FLOOR} && cosign attest "
+        f"--predicate {shlex.quote(str(predicate_path))} "
+        f"--type https://slsa.dev/provenance/v1 "
+        f"--key {shlex.quote(signing_key)} --yes {shlex.quote(ref)}"
+    )
 
 
 def verify_command(ref: str, verify_key: str | None) -> str:

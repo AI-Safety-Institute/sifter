@@ -88,6 +88,15 @@ class TestPushCommand:
         assert "oras push reg.example/team/base:1 base_1.sif && " in cmd
         assert "cosign sign --key awskms:///alias/k --yes reg.example/team/base:1" in cmd
 
+    def test_push_attaches_provenance_after_signature(self) -> None:
+        reg = OCIRegistry("reg.example/team", signing_key="awskms:///alias/k")
+        cmd = reg.generate_push_command(
+            Path("/scratch/base_1.sif"), "base_1.sif", Path("/scratch/base.provenance.json")
+        )
+        assert "cosign sign" in cmd
+        assert "cosign attest" in cmd
+        assert cmd.index("cosign sign") < cmd.index("cosign attest")
+
     def test_push_omits_cosign_when_signing_off(self) -> None:
         reg = OCIRegistry("reg.example/team", sign=False)
         cmd = reg.generate_push_command(Path("/scratch/base_1.sif"), "base_1.sif")

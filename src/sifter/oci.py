@@ -332,13 +332,17 @@ class OCIRegistry:
             pull = f"{pull} && ({check} || (rm -f {shlex.quote(str(dest))}; exit 1))"
         return f"{self._auth_prefix()}{pull}"
 
-    def generate_push_command(self, local_path: Path, filename: str) -> str:
+    def generate_push_command(
+        self, local_path: Path, filename: str, provenance_path: Path | None = None
+    ) -> str:
         ref = self._ref(filename)
         src = Path(local_path)
         # oras rejects an absolute source path; push the bare basename from its dir.
         push = f"cd {shlex.quote(str(src.parent))} && {shlex.quote(self.oras_bin)} push {shlex.quote(ref)} {shlex.quote(src.name)}"
         if self.sign:
             push = f"{push} && {signing.sign_command(ref, self.signing_key)}"
+            if provenance_path is not None:
+                push = f"{push} && {signing.attest_command(ref, provenance_path, self.signing_key)}"
         return f"{self._auth_prefix()}{self._push_prelude(filename)}{push}"
 
     @property

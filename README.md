@@ -203,6 +203,13 @@ a re-push, but won't clobber a present tag without `--force`.
 
 ### (g) Signing & verification
 
+For manifest-built images, a signed OCI push also attaches a **SLSA v1 provenance
+attestation**. Cosign binds the attestation to the subject image digest; the
+predicate records the Sifter content hash, definition-file digests, dependency
+identity, Sifter version and source revision
+when available. Build-argument values are deliberately omitted so credentials or
+other secret arguments cannot be published as provenance.
+
 Trust is established by cosign signatures using OCI-1.1 *referrer* signatures
 (the cosign v3 default — hence the ≥ 3.0.0 floor; v2 can neither produce nor read
 them). Both gates default **on** and fail closed, and disable independently only
